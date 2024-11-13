@@ -139,7 +139,7 @@ def evaluate(model_without_ddp, vae, ema_params, args, epoch, batch_size=16, log
     used_time = 0
     gen_img_cnt = 0
 
-    for i in range(num_steps):
+    for i in range(num_steps):  # this loop is to track the generation progress (how many images are generated)
         print("Generation step {}/{}".format(i, num_steps))
 
         labels_gen = class_label_gen_world[world_size * batch_size * i + local_rank * batch_size:
@@ -156,6 +156,8 @@ def evaluate(model_without_ddp, vae, ema_params, args, epoch, batch_size=16, log
                 sampled_tokens = model_without_ddp.sample_tokens(bsz=batch_size, num_iter=args.num_iter, cfg=cfg,
                                                                  cfg_schedule=args.cfg_schedule, labels=labels_gen,
                                                                  temperature=args.temperature)
+
+                # at this point, the MAR process is done including the masked generation step.
                 sampled_images = vae.decode(sampled_tokens / 0.2325)
 
         # measure speed after the first generation batch

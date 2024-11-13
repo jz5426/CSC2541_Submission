@@ -99,7 +99,7 @@ class MAR(nn.Module):
             z_channels=decoder_embed_dim,
             width=diffloss_w,
             depth=diffloss_d,
-            num_sampling_steps=num_sampling_steps,
+            num_sampling_steps=num_sampling_steps, # here defines the number of sampling steps during evaluation
             grad_checkpointing=grad_checkpointing
         )
         self.diffusion_batch_mul = diffusion_batch_mul
@@ -252,6 +252,7 @@ class MAR(nn.Module):
         x = self.forward_mae_encoder(x, mask, class_embedding)
 
         # mae decoder
+        #NOTE: this iterate to generate a latent feature
         z = self.forward_mae_decoder(x, mask)
 
         # diffloss
@@ -269,11 +270,11 @@ class MAR(nn.Module):
         indices = list(range(num_iter))
         if progress:
             indices = tqdm(indices)
-        # generate latents
+        # generate latents by iteratively unmask the codes (MaskViT)
         for step in indices:
             cur_tokens = tokens.clone()
 
-            # class embedding and CFG
+            # class embedding and CFG (classifier free guidance training)
             if labels is not None:
                 class_embedding = self.class_emb(labels)
             else:
@@ -283,10 +284,11 @@ class MAR(nn.Module):
                 class_embedding = torch.cat([class_embedding, self.fake_latent.repeat(bsz, 1)], dim=0)
                 mask = torch.cat([mask, mask], dim=0)
 
-            # mae encoder
+            # mae encoder, NOTE: this is the tokenizer to tokenize the latent image features without codebook
             x = self.forward_mae_encoder(tokens, mask, class_embedding)
 
             # mae decoder
+            #NOTE: decode the latent for this iteration
             z = self.forward_mae_decoder(x, mask)
 
             # mask ratio for the next round, following MaskGIT and MAGE.
@@ -309,13 +311,15 @@ class MAR(nn.Module):
 
             # sample token latents for this step
             z = z[mask_to_pred.nonzero(as_tuple=True)]
-            # cfg schedule follow Muse
+            # cfg schedule follow Muse NOTE: this is the iteration steps
             if cfg_schedule == "linear":
                 cfg_iter = 1 + (cfg - 1) * (self.seq_len - mask_len[0]) / self.seq_len
             elif cfg_schedule == "constant":
                 cfg_iter = cfg
             else:
                 raise NotImplementedError
+
+            #NOTE: entry point DDPM sampling note that the time step sequence must be the inside the follow function
             sampled_token_latent = self.diffloss.sample(z, temperature, cfg_iter)
             if not cfg == 1.0:
                 sampled_token_latent, _ = sampled_token_latent.chunk(2, dim=0)  # Remove null class samples

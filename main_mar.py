@@ -94,7 +94,7 @@ def get_args_parser():
     parser.add_argument('--temperature', default=1.0, type=float, help='diffusion loss sampling temperature')
 
     # Dataset parameters
-    parser.add_argument('--data_path', default='./data/imagenet', type=str,
+    parser.add_argument('--data_path', default='/mnt/c/Users/MaxYo/OneDrive/Desktop/CSC2541/mar/data/ILSVRC/Data/CLS-LOC/val', type=str,
                         help='dataset path')
     parser.add_argument('--class_num', default=1000, type=int)
 
@@ -228,79 +228,12 @@ def main(args):
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
         model_without_ddp = model.module
 
-    # no weight decay on bias, norm layers, and diffloss MLP
-    param_groups = misc.add_weight_decay(model_without_ddp, args.weight_decay)
-    optimizer = torch.optim.AdamW(param_groups, lr=args.lr, betas=(0.9, 0.95))
-    print(optimizer)
-    loss_scaler = NativeScaler()
-
-    # resume training
-    if args.resume and os.path.exists(os.path.join(args.resume, "checkpoint-last.pth")):
-        checkpoint = torch.load(os.path.join(args.resume, "checkpoint-last.pth"), map_location='cpu')
-        model_without_ddp.load_state_dict(checkpoint['model'])
-        model_params = list(model_without_ddp.parameters())
-        ema_state_dict = checkpoint['model_ema']
-        ema_params = [ema_state_dict[name].cuda() for name, _ in model_without_ddp.named_parameters()]
-        print("Resume checkpoint %s" % args.resume)
-
-        if 'optimizer' in checkpoint and 'epoch' in checkpoint:
-            optimizer.load_state_dict(checkpoint['optimizer'])
-            args.start_epoch = checkpoint['epoch'] + 1
-            if 'scaler' in checkpoint:
-                loss_scaler.load_state_dict(checkpoint['scaler'])
-            print("With optim & sched!")
-        del checkpoint
-    else:
-        model_params = list(model_without_ddp.parameters())
-        ema_params = copy.deepcopy(model_params)
-        print("Training from scratch")
-
     # evaluate FID and IS
     if args.evaluate:
         torch.cuda.empty_cache()
         evaluate(model_without_ddp, vae, ema_params, args, 0, batch_size=args.eval_bsz, log_writer=log_writer,
                  cfg=args.cfg, use_ema=True)
         return
-
-    # training
-    print(f"Start training for {args.epochs} epochs")
-    start_time = time.time()
-    for epoch in range(args.start_epoch, args.epochs):
-        if args.distributed:
-            data_loader_train.sampler.set_epoch(epoch)
-
-        train_one_epoch(
-            model, vae,
-            model_params, ema_params,
-            data_loader_train,
-            optimizer, device, epoch, loss_scaler,
-            log_writer=log_writer,
-            args=args
-        )
-
-        # save checkpoint
-        if epoch % args.save_last_freq == 0 or epoch + 1 == args.epochs:
-            misc.save_model(args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                            loss_scaler=loss_scaler, epoch=epoch, ema_params=ema_params, epoch_name="last")
-
-        # online evaluation
-        if args.online_eval and (epoch % args.eval_freq == 0 or epoch + 1 == args.epochs):
-            torch.cuda.empty_cache()
-            evaluate(model_without_ddp, vae, ema_params, args, epoch, batch_size=args.eval_bsz, log_writer=log_writer,
-                     cfg=1.0, use_ema=True)
-            if not (args.cfg == 1.0 or args.cfg == 0.0):
-                evaluate(model_without_ddp, vae, ema_params, args, epoch, batch_size=args.eval_bsz // 2,
-                         log_writer=log_writer, cfg=args.cfg, use_ema=True)
-            torch.cuda.empty_cache()
-
-        if misc.is_main_process():
-            if log_writer is not None:
-                log_writer.flush()
-
-    total_time = time.time() - start_time
-    total_time_str = str(datetime.timedelta(seconds=int(total_time)))
-    print('Training time {}'.format(total_time_str))
-
 
 if __name__ == '__main__':
     args = get_args_parser()

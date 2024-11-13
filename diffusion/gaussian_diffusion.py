@@ -525,9 +525,10 @@ class GaussianDiffusion:
         denoised_fn=None,
         cond_fn=None,
         model_kwargs=None,
-        eta=0.0,
+        eta=0,
     ):
         """
+        NOTE: interpolate the eta to converge from ddim to ddpm.
         Sample x_{t-1} from the model using DDIM.
         Same usage as p_sample().
         """
@@ -617,6 +618,7 @@ class GaussianDiffusion:
         eta=0.0,
     ):
         """
+        NOTE: DDIM implementation.
         Generate samples from the model using DDIM.
         Same usage as p_sample_loop().
         """

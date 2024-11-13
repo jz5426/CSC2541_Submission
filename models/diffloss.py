@@ -11,7 +11,7 @@ class DiffLoss(nn.Module):
     def __init__(self, target_channels, z_channels, depth, width, num_sampling_steps, grad_checkpointing=False):
         super(DiffLoss, self).__init__()
         self.in_channels = target_channels
-        self.net = SimpleMLPAdaLN(
+        self.net = SimpleMLPAdaLN( # NOTE: this is the MLP layer that denoise each token z at each spatial location.
             in_channels=target_channels,
             model_channels=width,
             out_channels=target_channels * 2,  # for vlb loss
@@ -44,11 +44,15 @@ class DiffLoss(nn.Module):
             model_kwargs = dict(c=z)
             sample_fn = self.net.forward
 
-        sampled_token_latent = self.gen_diffusion.p_sample_loop(
+        #NOTE: ENTRY POINT to the DDPM style sample takes place.
+        # sampled_token_latent = self.gen_diffusion.p_sample_loop(
+        #     sample_fn, noise.shape, noise, clip_denoised=False, model_kwargs=model_kwargs, progress=False,
+        #     temperature=temperature
+        # )
+        sampled_token_latent = self.gen_diffusion.ddim_sample_loop(
             sample_fn, noise.shape, noise, clip_denoised=False, model_kwargs=model_kwargs, progress=False,
-            temperature=temperature
+            eta=0
         )
-
         return sampled_token_latent
 
 

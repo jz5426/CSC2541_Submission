@@ -71,7 +71,7 @@ class SpacedDiffusion(GaussianDiffusion):
     """
 
     def __init__(self, use_timesteps, **kwargs):
-        self.use_timesteps = set(use_timesteps)
+        self.use_timesteps = set(use_timesteps) #NOTE: this is from the the output of the space_timesteps function
         self.timestep_map = []
         self.original_num_steps = len(kwargs["betas"])
 

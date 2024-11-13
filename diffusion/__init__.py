@@ -18,6 +18,7 @@ def create_diffusion(
     rescale_learned_sigmas=False,
     diffusion_steps=1000
 ):
+    # this is where they get the timesteps
     betas = gd.get_named_beta_schedule(noise_schedule, diffusion_steps)
     if use_kl:
         loss_type = gd.LossType.RESCALED_KL
@@ -27,8 +28,10 @@ def create_diffusion(
         loss_type = gd.LossType.MSE
     if timestep_respacing is None or timestep_respacing == "":
         timestep_respacing = [diffusion_steps]
+
+    #NOTE: so it use the timestep_respacing to get the total number of timesteps, like 1000/timestep_respacing(100) = 100 total number of timestep
     return SpacedDiffusion(
-        use_timesteps=space_timesteps(diffusion_steps, timestep_respacing),
+        use_timesteps=space_timesteps(diffusion_steps, timestep_respacing), #NOTE: the function says something about DDIM
         betas=betas,
         model_mean_type=(
             gd.ModelMeanType.EPSILON if not predict_xstart else gd.ModelMeanType.START_X
