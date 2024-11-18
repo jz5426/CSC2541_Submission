@@ -103,8 +103,8 @@ class MAR(nn.Module):
             depth=diffloss_d,
             num_sampling_steps=num_sampling_steps, # here defines the number of sampling steps during evaluation
             grad_checkpointing=grad_checkpointing,
-            sampler,
-            ita
+            sampler=sampler,
+            ita=ita
         )
         self.diffusion_batch_mul = diffusion_batch_mul
 
