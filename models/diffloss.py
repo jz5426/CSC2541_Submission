@@ -8,7 +8,15 @@ from diffusion import create_diffusion
 
 class DiffLoss(nn.Module):
     """Diffusion Loss"""
-    def __init__(self, target_channels, z_channels, depth, width, num_sampling_steps, grad_checkpointing=False):
+    def __init__(self, 
+                target_channels, 
+                z_channels, 
+                depth, 
+                width, 
+                num_sampling_steps, 
+                grad_checkpointing=False,
+                sampler='DDPM',
+                ita=1):
         super(DiffLoss, self).__init__()
         self.in_channels = target_channels
         self.net = SimpleMLPAdaLN( # NOTE: this is the MLP layer that denoise each token z at each spatial location.
@@ -22,6 +30,8 @@ class DiffLoss(nn.Module):
 
         self.train_diffusion = create_diffusion(timestep_respacing="", noise_schedule="cosine")
         self.gen_diffusion = create_diffusion(timestep_respacing=num_sampling_steps, noise_schedule="cosine")
+        self.sampler = sampler
+        self.ita = ita
 
     def forward(self, target, z, mask=None):
         t = torch.randint(0, self.train_diffusion.num_timesteps, (target.shape[0],), device=target.device)
@@ -45,14 +55,16 @@ class DiffLoss(nn.Module):
             sample_fn = self.net.forward
 
         #NOTE: ENTRY POINT to the DDPM style sample takes place.
-        # sampled_token_latent = self.gen_diffusion.p_sample_loop(
-        #     sample_fn, noise.shape, noise, clip_denoised=False, model_kwargs=model_kwargs, progress=False,
-        #     temperature=temperature
-        # )
-        sampled_token_latent = self.gen_diffusion.ddim_sample_loop(
-            sample_fn, noise.shape, noise, clip_denoised=False, model_kwargs=model_kwargs, progress=False,
-            eta=0
-        )
+        if self.sampler == 'DDPM':
+            sampled_token_latent = self.gen_diffusion.p_sample_loop(
+                sample_fn, noise.shape, noise, clip_denoised=False, model_kwargs=model_kwargs, progress=False,
+                temperature=temperature
+            )
+        else: # assume DDIM otherwise
+            sampled_token_latent = self.gen_diffusion.ddim_sample_loop(
+                sample_fn, noise.shape, noise, clip_denoised=False, model_kwargs=model_kwargs, progress=False,
+                eta=self.ita
+            )
         return sampled_token_latent
 
 
