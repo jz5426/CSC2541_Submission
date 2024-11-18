@@ -38,6 +38,8 @@ class MAR(nn.Module):
                  num_sampling_steps='100',
                  diffusion_batch_mul=4,
                  grad_checkpointing=False,
+                 sampler='DDPM',
+                 ita=1 # default = 1 implies DDPM
                  ):
         super().__init__()
 
@@ -100,7 +102,9 @@ class MAR(nn.Module):
             width=diffloss_w,
             depth=diffloss_d,
             num_sampling_steps=num_sampling_steps, # here defines the number of sampling steps during evaluation
-            grad_checkpointing=grad_checkpointing
+            grad_checkpointing=grad_checkpointing,
+            sampler,
+            ita
         )
         self.diffusion_batch_mul = diffusion_batch_mul
 

@@ -133,7 +133,8 @@ def evaluate(model_without_ddp, vae, ema_params, args, epoch, batch_size=16, log
     class_num = args.class_num
     assert args.num_images % class_num == 0  # number of images per class must be the same
     class_label_gen_world = np.arange(0, class_num).repeat(args.num_images // class_num)
-    class_label_gen_world = np.hstack([class_label_gen_world, np.zeros(50000)])
+    # class_label_gen_world = np.hstack([class_label_gen_world, np.zeros(50000)]) #TODO: check this. MANNUALLY COMMENTED.
+    class_label_gen_world = np.hstack([class_label_gen_world, np.zeros(args.num_images)])
     world_size = misc.get_world_size()
     local_rank = misc.get_rank()
     used_time = 0

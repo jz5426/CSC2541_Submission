@@ -45,9 +45,13 @@ def get_args_parser():
                         help='number of tokens to group as a patch.')
 
     # Generation parameters
+    parser.add_argument('--sampler', default='DDPM', type=int, # either DDPM or DDIM
+                        help='the choice of sampler to generate synthetic images')
+    parser.add_argument('--ita', default=1, type=int, # only meaningful when args.sampler = DDIM
+                        help='the sampling parameter for DDIM')
     parser.add_argument('--num_iter', default=64, type=int,
                         help='number of autoregressive iterations to generate an image')
-    parser.add_argument('--num_images', default=50000, type=int,
+    parser.add_argument('--num_images', default=1000, type=int, # or 2000
                         help='number of images to generate')
     parser.add_argument('--cfg', default=1.0, type=float, help="classifier-free guidance")
     parser.add_argument('--cfg_schedule', default="linear", type=str)
@@ -205,6 +209,8 @@ def main(args):
         num_sampling_steps=args.num_sampling_steps,
         diffusion_batch_mul=args.diffusion_batch_mul,
         grad_checkpointing=args.grad_checkpointing,
+        sampler = args.sampler,
+        ita = args.ita
     )
 
     print("Model = %s" % str(model))
