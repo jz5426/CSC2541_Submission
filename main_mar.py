@@ -234,6 +234,33 @@ def main(args):
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
         model_without_ddp = model.module
 
+    # no weight decay on bias, norm layers, and diffloss MLP
+    param_groups = misc.add_weight_decay(model_without_ddp, args.weight_decay)
+    optimizer = torch.optim.AdamW(param_groups, lr=args.lr, betas=(0.9, 0.95))
+    print(optimizer)
+    loss_scaler = NativeScaler()
+
+    # resume training
+    if args.resume and os.path.exists(os.path.join(args.resume, "checkpoint-last.pth")):
+        checkpoint = torch.load(os.path.join(args.resume, "checkpoint-last.pth"), map_location='cpu')
+        model_without_ddp.load_state_dict(checkpoint['model'])
+        model_params = list(model_without_ddp.parameters())
+        ema_state_dict = checkpoint['model_ema']
+        ema_params = [ema_state_dict[name].cuda() for name, _ in model_without_ddp.named_parameters()]
+        print("Resume checkpoint %s" % args.resume)
+
+        if 'optimizer' in checkpoint and 'epoch' in checkpoint:
+            optimizer.load_state_dict(checkpoint['optimizer'])
+            args.start_epoch = checkpoint['epoch'] + 1
+            if 'scaler' in checkpoint:
+                loss_scaler.load_state_dict(checkpoint['scaler'])
+            print("With optim & sched!")
+        del checkpoint
+    else:
+        model_params = list(model_without_ddp.parameters())
+        ema_params = copy.deepcopy(model_params)
+        print("Training from scratch")
+
     # evaluate FID and IS
     if args.evaluate:
         torch.cuda.empty_cache()
