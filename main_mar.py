@@ -45,7 +45,7 @@ def get_args_parser():
                         help='number of tokens to group as a patch.')
 
     # Generation parameters
-    parser.add_argument('--sampler', default='DDPM', type=int, # either DDPM or DDIM
+    parser.add_argument('--sampler', default='DDPM', type=str, # either DDPM or DDIM
                         help='the choice of sampler to generate synthetic images')
     parser.add_argument('--ita', default=1, type=int, # only meaningful when args.sampler = DDIM
                         help='the sampling parameter for DDIM')
@@ -161,32 +161,32 @@ def main(args):
     else:
         log_writer = None
 
-    # augmentation following DiT and ADM
-    transform_train = transforms.Compose([
-        transforms.Lambda(lambda pil_image: center_crop_arr(pil_image, args.img_size)),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
-    ])
+    # # augmentation following DiT and ADM
+    # transform_train = transforms.Compose([
+    #     transforms.Lambda(lambda pil_image: center_crop_arr(pil_image, args.img_size)),
+    #     transforms.RandomHorizontalFlip(),
+    #     transforms.ToTensor(),
+    #     transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
+    # ])
 
-    if args.use_cached:
-        dataset_train = CachedFolder(args.cached_path)
-    else:
-        dataset_train = datasets.ImageFolder(os.path.join(args.data_path, 'train'), transform=transform_train)
-    print(dataset_train)
+    # if args.use_cached:
+    #     dataset_train = CachedFolder(args.cached_path)
+    # else:
+    #     dataset_train = datasets.ImageFolder(os.path.join(args.data_path, 'train'), transform=transform_train)
+    # print(dataset_train)
 
-    sampler_train = torch.utils.data.DistributedSampler(
-        dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True
-    )
-    print("Sampler_train = %s" % str(sampler_train))
+    # sampler_train = torch.utils.data.DistributedSampler(
+    #     dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True
+    # )
+    # print("Sampler_train = %s" % str(sampler_train))
 
-    data_loader_train = torch.utils.data.DataLoader(
-        dataset_train, sampler=sampler_train,
-        batch_size=args.batch_size,
-        num_workers=args.num_workers,
-        pin_memory=args.pin_mem,
-        drop_last=True,
-    )
+    # data_loader_train = torch.utils.data.DataLoader(
+    #     dataset_train, sampler=sampler_train,
+    #     batch_size=args.batch_size,
+    #     num_workers=args.num_workers,
+    #     pin_memory=args.pin_mem,
+    #     drop_last=True,
+    # )
 
     # define the vae and mar model
     vae = AutoencoderKL(embed_dim=args.vae_embed_dim, ch_mult=(1, 1, 2, 2, 4), ckpt_path=args.vae_path).cuda().eval()
