@@ -99,7 +99,7 @@ def get_args_parser():
 
     # Dataset parameters
     parser.add_argument('--data_path', default='/mnt/c/Users/MaxYo/OneDrive/Desktop/CSC2541/mar/data/ILSVRC/Data/CLS-LOC/val', type=str,
-                        help='dataset path')
+                        help='dataset path') # this is not needed during evaluation.
     parser.add_argument('--class_num', default=1000, type=int)
 
     parser.add_argument('--output_dir', default='./output_dir',
