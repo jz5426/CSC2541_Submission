@@ -61,6 +61,7 @@ class DiffLoss(nn.Module):
                 temperature=temperature
             )
         else: # assume DDIM otherwise
+            # print('Using DDIM!! with ita {}'.format(self.ita)) #NOTE: for debug pupose
             sampled_token_latent = self.gen_diffusion.ddim_sample_loop(
                 sample_fn, noise.shape, noise, clip_denoised=False, model_kwargs=model_kwargs, progress=False,
                 eta=self.ita

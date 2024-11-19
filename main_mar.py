@@ -47,7 +47,7 @@ def get_args_parser():
     # Generation parameters
     parser.add_argument('--sampler', default='DDPM', type=str, # either DDPM or DDIM
                         help='the choice of sampler to generate synthetic images')
-    parser.add_argument('--ita', default=1, type=int, # only meaningful when args.sampler = DDIM
+    parser.add_argument('--ita', default=1, type=float, # only meaningful when args.sampler = DDIM
                         help='the sampling parameter for DDIM')
     parser.add_argument('--num_iter', default=64, type=int,
                         help='number of autoregressive iterations to generate an image')

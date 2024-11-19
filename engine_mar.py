@@ -115,6 +115,11 @@ def evaluate(model_without_ddp, vae, ema_params, args, epoch, batch_size=16, log
         save_folder = save_folder + "_ema"
     if args.evaluate:
         save_folder = save_folder + "_evaluate"
+    
+    save_folder += '_{}'.format(args.sampler)
+    if args.sampler == 'DDIM':
+        save_folder += '_{}'.format(args.ita)
+
     print("Save to:", save_folder)
     if misc.get_rank() == 0:
         if not os.path.exists(save_folder):
@@ -179,6 +184,7 @@ def evaluate(model_without_ddp, vae, ema_params, args, epoch, batch_size=16, log
                 break
             gen_img = np.round(np.clip(sampled_images[b_id].numpy().transpose([1, 2, 0]) * 255, 0, 255))
             gen_img = gen_img.astype(np.uint8)[:, :, ::-1]
+            print('saving to ', os.path.join(save_folder, '{}.png'.format(str(img_id).zfill(5))))
             cv2.imwrite(os.path.join(save_folder, '{}.png'.format(str(img_id).zfill(5))), gen_img)
 
     torch.distributed.barrier()
