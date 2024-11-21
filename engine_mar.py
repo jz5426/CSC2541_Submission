@@ -144,7 +144,7 @@ def evaluate(model_without_ddp, vae, ema_params, args, epoch, batch_size=16, log
     local_rank = misc.get_rank()
     used_time = 0
     gen_img_cnt = 0
-
+    avg_time_per_img = 0
     for i in range(num_steps):  # this loop is to track the generation progress (how many images are generated)
         print("Generation step {}/{}".format(i, num_steps))
 
@@ -171,6 +171,7 @@ def evaluate(model_without_ddp, vae, ema_params, args, epoch, batch_size=16, log
             torch.cuda.synchronize()
             used_time += time.time() - start_time
             gen_img_cnt += batch_size
+            avg_time_per_img = used_time / gen_img_cnt
             print("Generating {} images takes {:.5f} seconds, {:.5f} sec per image".format(gen_img_cnt, used_time, used_time / gen_img_cnt))
 
         torch.distributed.barrier()
@@ -227,9 +228,10 @@ def evaluate(model_without_ddp, vae, ema_params, args, epoch, batch_size=16, log
         # shutil.rmtree(save_folder) dont remove the folder.
 
         # write the results to a spreadsheet
-
+        return fid, inception_score, avg_time_per_img
     torch.distributed.barrier()
     time.sleep(10)
+    return None
 
 
 def cache_latents(vae,

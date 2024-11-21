@@ -21,6 +21,9 @@ from models import mar
 from engine_mar import train_one_epoch, evaluate
 import copy
 
+import openpyxl
+from openpyxl import Workbook
+
 
 def get_args_parser(with_cfg=False):
     parser = argparse.ArgumentParser('MAR training with Diffusion Loss', add_help=False)
@@ -262,17 +265,59 @@ def main(args):
         print("Training from scratch")
 
     # evaluate FID and IS
+    results = None
     if args.evaluate:
         torch.cuda.empty_cache()
-        evaluate(model_without_ddp, vae, ema_params, args, 0, batch_size=args.eval_bsz, log_writer=log_writer,
-                 cfg=args.cfg, use_ema=True)
-        return
+        results = evaluate(model_without_ddp, vae, ema_params, args, 0, batch_size=args.eval_bsz, log_writer=log_writer,
+                           cfg=args.cfg, use_ema=True)
+
+    if results is not None:
+        fid, inception, time_per_img = results
+        # Path to the Excel file
+        filepath = "./experiment_results.xlsx"
+        add_to_excel(filepath, args, fid, inception, time_per_img)
+
+
+
+# Define the function to add row data to an Excel file
+def add_to_excel(filepath, args, fid, inception, time_per_img):
+    # Check if file exists, else create a new workbook
+    if os.path.exists(filepath):
+        workbook = openpyxl.load_workbook(filepath)
+        sheet = workbook.active
+    else:
+        workbook = Workbook()
+        sheet = workbook.active
+        # Write headers if the file is new
+        headers = [
+            "img_size", "vae_stride", "patch_size", "vae_embed_dim", 
+            "mask_ratio_min", "label_drop_prob", "class_num", 
+            "attn_dropout", "proj_dropout", "buffer_size", 
+            "diffloss_d", "diffloss_w", "num_sampling_steps", 
+            "diffusion_batch_mul", "grad_checkpointing", "sampler", 
+            "ita", "fid", "inception", "time_per_img"
+        ]
+        sheet.append(headers)
+
+    # Add data from args and additional columns
+    data_row = [
+        args.img_size, args.vae_stride, args.patch_size, args.vae_embed_dim,
+        args.mask_ratio_min, args.label_drop_prob, args.class_num,
+        args.attn_dropout, args.proj_dropout, args.buffer_size,
+        args.diffloss_d, args.diffloss_w, args.num_sampling_steps,
+        args.diffusion_batch_mul, args.grad_checkpointing, args.sampler,
+        args.ita, fid, inception, time_per_img
+    ]
+    sheet.append(data_row)
+
+    # Save the workbook
+    workbook.save(filepath)
+    print(f"Data added to {filepath}")
+
 
 if __name__ == '__main__':
     args = get_args_parser()
     args = args.parse_args()
     Path(args.output_dir).mkdir(parents=True, exist_ok=True)
-
-    
     args.log_dir = args.output_dir
     main(args)
