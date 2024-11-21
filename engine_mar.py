@@ -184,7 +184,7 @@ def evaluate(model_without_ddp, vae, ema_params, args, epoch, batch_size=16, log
                 break
             gen_img = np.round(np.clip(sampled_images[b_id].numpy().transpose([1, 2, 0]) * 255, 0, 255))
             gen_img = gen_img.astype(np.uint8)[:, :, ::-1]
-            print('saving to ', os.path.join(save_folder, '{}.png'.format(str(img_id).zfill(5))))
+            # print('saving to ', os.path.join(save_folder, '{}.png'.format(str(img_id).zfill(5))))
             cv2.imwrite(os.path.join(save_folder, '{}.png'.format(str(img_id).zfill(5))), gen_img)
 
     torch.distributed.barrier()
@@ -224,7 +224,9 @@ def evaluate(model_without_ddp, vae, ema_params, args, epoch, batch_size=16, log
         log_writer.add_scalar('is{}'.format(postfix), inception_score, epoch)
         print("FID: {:.4f}, Inception Score: {:.4f}".format(fid, inception_score))
         # remove temporal saving folder
-        shutil.rmtree(save_folder)
+        # shutil.rmtree(save_folder) dont remove the folder.
+
+        # write the results to a spreadsheet
 
     torch.distributed.barrier()
     time.sleep(10)

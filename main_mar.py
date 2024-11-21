@@ -22,14 +22,14 @@ from engine_mar import train_one_epoch, evaluate
 import copy
 
 
-def get_args_parser():
+def get_args_parser(with_cfg=False):
     parser = argparse.ArgumentParser('MAR training with Diffusion Loss', add_help=False)
-    parser.add_argument('--batch_size', default=16, type=int,
+    parser.add_argument('--batch_size', default=64, type=int,
                         help='Batch size per GPU (effective batch size is batch_size * # gpus')
     parser.add_argument('--epochs', default=400, type=int)
 
     # Model parameters
-    parser.add_argument('--model', default='mar_large', type=str, metavar='MODEL',
+    parser.add_argument('--model', default='mar_base', type=str, metavar='MODEL',
                         help='Name of model to train')
 
     # VAE parameters
@@ -53,7 +53,7 @@ def get_args_parser():
                         help='number of autoregressive iterations to generate an image')
     parser.add_argument('--num_images', default=1000, type=int, # or 2000
                         help='number of images to generate')
-    parser.add_argument('--cfg', default=1.0, type=float, help="classifier-free guidance")
+    parser.add_argument('--cfg', default=1.0 if with_cfg else 0.95, type=float, help="classifier-free guidance")
     parser.add_argument('--cfg_schedule', default="linear", type=str)
     parser.add_argument('--label_drop_prob', default=0.1, type=float)
     parser.add_argument('--eval_freq', type=int, default=40, help='evaluation frequency')
@@ -91,18 +91,18 @@ def get_args_parser():
     parser.add_argument('--buffer_size', type=int, default=64)
 
     # Diffusion Loss params
-    parser.add_argument('--diffloss_d', type=int, default=12)
-    parser.add_argument('--diffloss_w', type=int, default=1536)
+    parser.add_argument('--diffloss_d', type=int, default=6)
+    parser.add_argument('--diffloss_w', type=int, default=1024)
     parser.add_argument('--num_sampling_steps', type=str, default="100")
     parser.add_argument('--diffusion_batch_mul', type=int, default=1)
-    parser.add_argument('--temperature', default=1.0, type=float, help='diffusion loss sampling temperature')
+    parser.add_argument('--temperature', default=1.0 if with_cfg else 0.95, type=float, help='diffusion loss sampling temperature')
 
     # Dataset parameters
-    parser.add_argument('--data_path', default='/mnt/c/Users/MaxYo/OneDrive/Desktop/CSC2541/mar/data/ILSVRC/Data/CLS-LOC/val', type=str,
+    parser.add_argument('--data_path', default='./', type=str,
                         help='dataset path') # this is not needed during evaluation.
     parser.add_argument('--class_num', default=1000, type=int)
 
-    parser.add_argument('--output_dir', default='./output_dir',
+    parser.add_argument('--output_dir', default='pretrained_models/mar/mar_base',
                         help='path where to save, empty for no saving')
     parser.add_argument('--log_dir', default='./output_dir',
                         help='path where to tensorboard log')
@@ -272,5 +272,7 @@ if __name__ == '__main__':
     args = get_args_parser()
     args = args.parse_args()
     Path(args.output_dir).mkdir(parents=True, exist_ok=True)
+
+    
     args.log_dir = args.output_dir
     main(args)
