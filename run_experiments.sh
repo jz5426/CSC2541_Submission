@@ -38,7 +38,7 @@ run_experiment() {
                 --diffloss_w 1024 \
                 --eval_bsz 64 \
                 --num_images 1000 \
-                --num_iter 20 \
+                --num_iter 64 \
                 --cfg "$cfg" \
                 --cfg_schedule linear \
                 --temperature "$temperature" \

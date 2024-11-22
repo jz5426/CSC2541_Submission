@@ -295,7 +295,7 @@ def add_to_excel(filepath, args, fid, inception, time_per_img):
             "attn_dropout", "proj_dropout", "buffer_size", 
             "diffloss_d", "diffloss_w", "num_sampling_steps", 
             "diffusion_batch_mul", "grad_checkpointing", "sampler", 
-            "ita", "fid", "inception", "time_per_img"
+            "ita", 'cfg', 'temperature', "fid", "inception", "time_per_img"
         ]
         sheet.append(headers)
 
@@ -306,7 +306,7 @@ def add_to_excel(filepath, args, fid, inception, time_per_img):
         args.attn_dropout, args.proj_dropout, args.buffer_size,
         args.diffloss_d, args.diffloss_w, args.num_sampling_steps,
         args.diffusion_batch_mul, args.grad_checkpointing, args.sampler,
-        args.ita, fid, inception, time_per_img
+        args.ita, args.cfg, args.temperature, fid, inception, time_per_img
     ]
     sheet.append(data_row)
 
