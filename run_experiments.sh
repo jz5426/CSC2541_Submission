@@ -9,10 +9,10 @@ run_experiment() {
     if [[ "$sampler" == "DDPM" ]]; then
         ita_values=(1)
     else
-        ita_values=(0)
+        ita_values=(0, 0.2, 0.5, 1.)
     fi
 
-    sampling_steps=(200)
+    sampling_steps=(10, 20, 50, 100)
 
     # Iterate over each combination of `ita` and `sampling step`
     for ita in "${ita_values[@]}"; do
@@ -65,5 +65,5 @@ run_experiment "DDIM" true  # With classifier-free guidance
 run_experiment "DDIM" false # Without classifier-free guidance
 
 # # # Experiment 1: DDPM
-# run_experiment "DDPM" true  # With classifier-free guidance
+run_experiment "DDPM" true  # With classifier-free guidance
 # run_experiment "DDPM" false # Without classifier-free guidance

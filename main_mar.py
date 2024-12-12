@@ -274,7 +274,7 @@ def main(args):
     if results is not None:
         fid, inception, time_per_img = results
         # Path to the Excel file
-        filepath = "./experiment_results.xlsx"
+        filepath = "./experiment_results2.xlsx"
         add_to_excel(filepath, args, fid, inception, time_per_img)
 
 
