@@ -37,7 +37,7 @@ run_experiment() {
                 --diffloss_d 6 \
                 --diffloss_w 1024 \
                 --eval_bsz 64 \
-                --num_images 2000 \
+                --num_images 5000 \
                 --num_iter 64 \
                 --cfg "$cfg" \
                 --cfg_schedule linear \
@@ -66,4 +66,4 @@ run_experiment "DDIM" false # Without classifier-free guidance
 
 # # # Experiment 1: DDPM
 run_experiment "DDPM" true  # With classifier-free guidance
-# run_experiment "DDPM" false # Without classifier-free guidance
+run_experiment "DDPM" false # Without classifier-free guidance
